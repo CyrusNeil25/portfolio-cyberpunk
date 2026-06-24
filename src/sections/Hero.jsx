@@ -13,6 +13,8 @@ import { motion } from 'framer-motion';
 // ─────────────────────────────────────────────────────────────────────────────────
 
 // ── Cyberpunk artwork display ─────────────────────────────────────────────────
+const ARTWORK_SRC = `${import.meta.env.BASE_URL}Artwork.png`;
+
 function ArtworkVisual() {
   const [glitching, setGlitching] = useState(false);
 
@@ -33,16 +35,16 @@ function ArtworkVisual() {
   return (
     <div className="artwork-wrap">
       {/* Base image */}
-      <img src="/Artwork.png" alt="Cyberpunk artwork" className="aw-img" />
+      <img src={ARTWORK_SRC} alt="Cyberpunk artwork" className="aw-img" />
       {/* Chromatic aberration colour split */}
-      <img src="/Artwork.png" alt="" aria-hidden className="aw-img aw-ca-r" />
-      <img src="/Artwork.png" alt="" aria-hidden className="aw-img aw-ca-b" />
+      <img src={ARTWORK_SRC} alt="" aria-hidden className="aw-img aw-ca-r" />
+      <img src={ARTWORK_SRC} alt="" aria-hidden className="aw-img aw-ca-b" />
       {/* Random glitch burst slices */}
       {glitching && (
         <>
-          <img src="/Artwork.png" alt="" aria-hidden className="aw-img aw-glitch-1" />
-          <img src="/Artwork.png" alt="" aria-hidden className="aw-img aw-glitch-2" />
-          <img src="/Artwork.png" alt="" aria-hidden className="aw-img aw-glitch-3" />
+          <img src={ARTWORK_SRC} alt="" aria-hidden className="aw-img aw-glitch-1" />
+          <img src={ARTWORK_SRC} alt="" aria-hidden className="aw-img aw-glitch-2" />
+          <img src={ARTWORK_SRC} alt="" aria-hidden className="aw-img aw-glitch-3" />
         </>
       )}
     </div>
