@@ -3,7 +3,7 @@ name: Deploy Vite Site
 on:
   push:
     branches:
-      - main
+      - portfolio-cyberpunk-feat-v1-001
 
 permissions:
   contents: read
