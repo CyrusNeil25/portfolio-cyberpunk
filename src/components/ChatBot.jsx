@@ -45,20 +45,35 @@ const QUICK_ACTIONS = [
 function RobotFace({ size = 34, blinking }) {
   return (
     <svg width={size} height={size} viewBox="0 0 40 40" fill="none">
-      {/* antenna */}
-      <line x1="20" y1="3" x2="20" y2="8" stroke="var(--cyan)" strokeWidth="1.5" />
-      <circle cx="20" cy="3" r="2" fill="var(--magenta)">
-        <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />
-      </circle>
+      {/* antenna — sways gently, like it's alert/listening */}
+      <g>
+        <animateTransform
+          attributeName="transform" type="rotate"
+          values="0 20 8; -6 20 8; 0 20 8; 6 20 8; 0 20 8"
+          dur="3.4s" repeatCount="indefinite"
+        />
+        <line x1="20" y1="3" x2="20" y2="8" stroke="var(--cyan)" strokeWidth="1.5" />
+        <circle cx="20" cy="3" r="2" fill="var(--magenta)">
+          <animate attributeName="opacity" values="1;0.3;1" dur="2s" repeatCount="indefinite" />
+        </circle>
+      </g>
       {/* head */}
       <rect x="7" y="8" width="26" height="22" rx="4" stroke="var(--cyan)" strokeWidth="1.5" fill="var(--surface)" />
-      {/* eyes */}
-      <rect x="13" y="15" width="5" height={blinking ? 1 : 6} rx="1" fill="var(--cyan)">
-        <animate attributeName="height" values="6;6;1;6;6" keyTimes="0;0.45;0.5;0.55;1" dur="4s" repeatCount="indefinite" />
-      </rect>
-      <rect x="22" y="15" width="5" height={blinking ? 1 : 6} rx="1" fill="var(--cyan)">
-        <animate attributeName="height" values="6;6;1;6;6" keyTimes="0;0.45;0.5;0.55;1" dur="4s" repeatCount="indefinite" />
-      </rect>
+      {/* eyes — blink, and drift slightly left/right as if looking around */}
+      <g>
+        <animateTransform
+          attributeName="transform" type="translate"
+          values="0,0; 1.2,0; 1.2,0; -1.2,0; -1.2,0; 0,0"
+          keyTimes="0;0.2;0.45;0.55;0.8;1"
+          dur="6s" repeatCount="indefinite"
+        />
+        <rect x="13" y="15" width="5" height={blinking ? 1 : 6} rx="1" fill="var(--cyan)">
+          <animate attributeName="height" values="6;6;1;6;6" keyTimes="0;0.45;0.5;0.55;1" dur="4s" repeatCount="indefinite" />
+        </rect>
+        <rect x="22" y="15" width="5" height={blinking ? 1 : 6} rx="1" fill="var(--cyan)">
+          <animate attributeName="height" values="6;6;1;6;6" keyTimes="0;0.45;0.5;0.55;1" dur="4s" repeatCount="indefinite" />
+        </rect>
+      </g>
       {/* mouth */}
       <path d="M14 25 h3 v1.5 h3 v-1.5 h3 v1.5 h3" stroke="var(--magenta)" strokeWidth="1.2" fill="none" />
       {/* ears */}
@@ -90,12 +105,41 @@ export default function ChatBot() {
   const [typing, setTyping] = useState(false);
   const [teaserVisible, setTeaserVisible] = useState(false);
   const [teaserDismissed, setTeaserDismissed] = useState(false);
+  const [lift, setLift] = useState(0);
   const scrollRef = useRef(null);
 
   // Auto-scroll to newest message
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: 'smooth' });
   }, [messages, typing, open]);
+
+  // Lift the bot above the footer instead of letting it float over it.
+  // Tracks how far the footer intrudes into the viewport and pushes
+  // the bot up by that amount (plus a small gap), clamped to 0 otherwise.
+  useEffect(() => {
+    let ticking = false;
+    const recalc = () => {
+      const footer = document.querySelector('footer');
+      if (footer) {
+        const overlap = window.innerHeight - footer.getBoundingClientRect().top;
+        setLift(overlap > 0 ? overlap + 16 : 0);
+      }
+      ticking = false;
+    };
+    const onScroll = () => {
+      if (!ticking) {
+        window.requestAnimationFrame(recalc);
+        ticking = true;
+      }
+    };
+    recalc();
+    window.addEventListener('scroll', onScroll, { passive: true });
+    window.addEventListener('resize', onScroll);
+    return () => {
+      window.removeEventListener('scroll', onScroll);
+      window.removeEventListener('resize', onScroll);
+    };
+  }, []);
 
   // Pop up an attention-grabbing teaser bubble a few seconds after load,
   // unless the user already opened the chat or dismissed it.
@@ -139,13 +183,14 @@ export default function ChatBot() {
             transition={{ type: 'spring', stiffness: 320, damping: 24 }}
             className="cb-teaser"
             style={{
-              position: 'fixed', bottom: '6.2rem', right: '1.5rem', zIndex: 1499,
+              position: 'fixed', bottom: `calc(6.2rem + ${lift}px)`, right: '1.5rem', zIndex: 1499,
               maxWidth: '220px',
               background: 'var(--surface)',
               border: '1px solid var(--cyan)',
               boxShadow: '0 0 16px rgba(0,245,255,0.2), 0 8px 24px rgba(0,0,0,0.4)',
               padding: '0.7rem 0.85rem',
               clipPath: 'polygon(10px 0%, 100% 0%, 100% 100%, 0% 100%, 0% 10px)',
+              transition: 'bottom 0.15s ease-out',
             }}
           >
             <button
@@ -192,25 +237,33 @@ export default function ChatBot() {
         )}
       </AnimatePresence>
 
-      {/* ── Floating toggle button ── */}
+      {/* ── Floating toggle button — gentle idle bob + tilt when closed ── */}
       <motion.button
         onClick={() => setOpen((o) => !o)}
         aria-label={open ? 'Close assistant' : 'Open assistant'}
         initial={{ opacity: 0, scale: 0 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 1, type: 'spring', stiffness: 260 }}
-        whileHover={{ scale: 1.08 }}
+        animate={{
+          opacity: 1, scale: 1,
+          y: open ? 0 : [0, -6, 0],
+          rotate: open ? 0 : [0, -3, 0, 3, 0],
+        }}
+        transition={{
+          default: { delay: 1, type: 'spring', stiffness: 260 },
+          y: { duration: 3.6, repeat: open ? 0 : Infinity, ease: 'easeInOut', delay: 1.4 },
+          rotate: { duration: 4.4, repeat: open ? 0 : Infinity, ease: 'easeInOut', delay: 1.4 },
+        }}
+        whileHover={{ scale: 1.08, rotate: 0 }}
         whileTap={{ scale: 0.94 }}
-        className="cb-float"
+        className={`cb-float${open ? '' : ' cb-breathe'}`}
         style={{
-          position: 'fixed', bottom: '1.5rem', right: '1.5rem', zIndex: 1500,
+          position: 'fixed', bottom: `calc(1.5rem + ${lift}px)`, right: '1.5rem', zIndex: 1500,
           width: '58px', height: '58px',
           background: 'var(--surface)',
           border: '1px solid var(--cyan)',
-          boxShadow: '0 0 16px rgba(0,245,255,0.25)',
           cursor: 'pointer',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
           clipPath: 'polygon(12px 0%, 100% 0%, 100% calc(100% - 12px), calc(100% - 12px) 100%, 0% 100%, 0% 12px)',
+          transition: 'bottom 0.15s ease-out',
         }}
       >
         {open ? <FaTimes size={18} style={{ color: 'var(--magenta)' }} /> : <RobotFace />}
@@ -226,13 +279,14 @@ export default function ChatBot() {
             transition={{ type: 'spring', stiffness: 320, damping: 30 }}
             className="cb-panel"
             style={{
-              position: 'fixed', bottom: '5.75rem', right: '1.5rem', zIndex: 1500,
+              position: 'fixed', bottom: `calc(5.75rem + ${lift}px)`, right: '1.5rem', zIndex: 1500,
               width: '340px', maxWidth: 'calc(100vw - 2rem)',
               height: '460px', maxHeight: 'calc(100vh - 8rem)',
               background: '#050a14',
               border: '1px solid var(--cyan)',
               boxShadow: '0 0 30px rgba(0,245,255,0.15), 0 16px 50px rgba(0,0,0,0.55)',
               display: 'flex', flexDirection: 'column', overflow: 'hidden',
+              transition: 'bottom 0.15s ease-out',
             }}
           >
             {/* Header */}
@@ -350,6 +404,12 @@ export default function ChatBot() {
       </AnimatePresence>
 
       <style>{`
+        .cb-float { box-shadow: 0 0 16px rgba(0,245,255,0.25); }
+        .cb-breathe { animation: cb-breathe 3.6s ease-in-out infinite; }
+        @keyframes cb-breathe {
+          0%, 100% { box-shadow: 0 0 14px rgba(0,245,255,0.2); }
+          50%       { box-shadow: 0 0 24px rgba(0,245,255,0.4); }
+        }
         @keyframes cb-dot {
           0%, 100% { opacity: 0.25; transform: translateY(0); }
           50%       { opacity: 1;    transform: translateY(-3px); }
@@ -358,8 +418,9 @@ export default function ChatBot() {
         .cb-scroll::-webkit-scrollbar-track { background: transparent; }
         .cb-scroll::-webkit-scrollbar-thumb { background: var(--cyan); }
         @media (max-width: 480px) {
-          .cb-panel { right: 1rem !important; bottom: 5.25rem !important; height: 70vh !important; }
-          .cb-float { right: 1rem !important; bottom: 1rem !important; }
+          .cb-panel { right: 1rem !important; bottom: calc(5.25rem + ${lift}px) !important; height: 70vh !important; }
+          .cb-float { right: 1rem !important; bottom: calc(1rem + ${lift}px) !important; }
+          .cb-teaser { right: 1rem !important; }
         }
       `}</style>
     </>
