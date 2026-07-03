@@ -3,7 +3,7 @@ import react from '@vitejs/plugin-react'
 import tailwindcss from '@tailwindcss/vite'
 
 export default defineConfig({
-  base: '/portfolio-cyberpunk/',
+  base: '/',
 
   plugins: [react(), tailwindcss()],
   // react-spline can pull in a second React instance during dep pre-bundling,
