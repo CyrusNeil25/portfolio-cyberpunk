@@ -1,7 +1,9 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link } from 'react-router-dom';
 import { FaArrowLeft, FaGithub, FaExternalLinkAlt, FaStar } from 'react-icons/fa';
 import { projects } from '../data/projects';
+import ProjectModal from '../components/ProjectModal';
 
 const EXTRA_DETAIL = {
   1: { role: 'Solo Developer', duration: '3 months', highlight: '1M+ users monitored', lines: '~12,000 LOC' },
@@ -12,7 +14,7 @@ const EXTRA_DETAIL = {
   6: { role: 'Tool Author', duration: '2 weeks', highlight: 'Processes 100k rows/sec', lines: '~2,100 LOC' },
 };
 
-function ProjectCard({ project, index, featured }) {
+function ProjectCard({ project, index, featured, onOpen }) {
   const extra = EXTRA_DETAIL[project.id];
   return (
     <motion.div
@@ -20,7 +22,8 @@ function ProjectCard({ project, index, featured }) {
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08 }}
       whileHover={{ scale: 1.02, y: -4 }}
-      style={{ transition: 'box-shadow 0.2s, border-color 0.2s' }}
+      onClick={() => onOpen(project)}
+      style={{ transition: 'box-shadow 0.2s, border-color 0.2s', cursor: 'pointer' }}
       onMouseEnter={(e) => {
         e.currentTarget.style.boxShadow = featured
           ? '0 0 24px rgba(0,245,255,0.18)'
@@ -100,6 +103,7 @@ function ProjectCard({ project, index, featured }) {
         <div style={{ display: 'flex', gap: '1rem', paddingTop: '0.75rem', borderTop: '1px solid var(--border)' }}>
           {project.github && (
             <a href={project.github} target="_blank" rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
               style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--muted)', textDecoration: 'none', transition: 'color 0.2s' }}
               onMouseEnter={(e) => e.currentTarget.style.color = 'var(--cyan)'}
               onMouseLeave={(e) => e.currentTarget.style.color = 'var(--muted)'}>
@@ -108,6 +112,7 @@ function ProjectCard({ project, index, featured }) {
           )}
           {project.live && (
             <a href={project.live} target="_blank" rel="noopener noreferrer"
+              onClick={(e) => e.stopPropagation()}
               style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontFamily: 'var(--font-mono)', fontSize: '0.72rem', color: 'var(--muted)', textDecoration: 'none', transition: 'color 0.2s' }}
               onMouseEnter={(e) => e.currentTarget.style.color = 'var(--magenta)'}
               onMouseLeave={(e) => e.currentTarget.style.color = 'var(--muted)'}>
@@ -123,6 +128,7 @@ function ProjectCard({ project, index, featured }) {
 export default function ProjectsPage() {
   const featured = projects.filter((p) => p.featured);
   const rest = projects.filter((p) => !p.featured);
+  const [selected, setSelected] = useState(null);
 
   return (
     <motion.div
@@ -161,7 +167,7 @@ export default function ProjectsPage() {
             <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(320px, 1fr))', gap: '1.25rem' }}>
-            {featured.map((p, i) => <ProjectCard key={p.id} project={p} index={i} featured />)}
+            {featured.map((p, i) => <ProjectCard key={p.id} project={p} index={i} featured onOpen={setSelected} />)}
           </div>
         </div>
 
@@ -172,10 +178,12 @@ export default function ProjectsPage() {
             <div style={{ flex: 1, height: '1px', background: 'var(--border)' }} />
           </div>
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '1rem' }}>
-            {rest.map((p, i) => <ProjectCard key={p.id} project={p} index={i} />)}
+            {rest.map((p, i) => <ProjectCard key={p.id} project={p} index={i} onOpen={setSelected} />)}
           </div>
         </div>
       </section>
+
+      <ProjectModal project={selected} onClose={() => setSelected(null)} />
     </motion.div>
   );
 }
