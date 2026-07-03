@@ -1,14 +1,17 @@
+import { useState } from 'react';
 import { motion } from 'framer-motion';
 import { FaGithub, FaExternalLinkAlt } from 'react-icons/fa';
 import { projects } from '../data/projects';
+import ProjectModal from '../components/ProjectModal';
 
-function ProjectCard({ project, index }) {
+function ProjectCard({ project, index, onOpen }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 30 }}
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true }}
       transition={{ delay: index * 0.1 }}
+      onClick={() => onOpen(project)}
       className="corner-bracket card-flicker"
       style={{
         background: 'var(--surface)',
@@ -19,6 +22,7 @@ function ProjectCard({ project, index }) {
         gap: '0.75rem',
         transition: 'border-color 0.2s, box-shadow 0.2s',
         position: 'relative',
+        cursor: 'pointer',
       }}
     >
       {/* Card number */}
@@ -70,6 +74,7 @@ function ProjectCard({ project, index }) {
             href={project.github}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -91,6 +96,7 @@ function ProjectCard({ project, index }) {
             href={project.live}
             target="_blank"
             rel="noopener noreferrer"
+            onClick={(e) => e.stopPropagation()}
             style={{
               display: 'flex',
               alignItems: 'center',
@@ -113,6 +119,8 @@ function ProjectCard({ project, index }) {
 }
 
 export default function Projects() {
+  const [selected, setSelected] = useState(null);
+
   return (
     <section
       id="projects"
@@ -147,10 +155,12 @@ export default function Projects() {
           gap: '1.25rem',
         }}>
           {projects.map((project, i) => (
-            <ProjectCard key={project.id} project={project} index={i} />
+            <ProjectCard key={project.id} project={project} index={i} onOpen={setSelected} />
           ))}
         </div>
       </div>
+
+      <ProjectModal project={selected} onClose={() => setSelected(null)} />
     </section>
   );
 }

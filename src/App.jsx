@@ -1,6 +1,7 @@
 import { Routes, Route, useLocation } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
 import Navbar from './components/Navbar';
+import ChatBot from './components/ChatBot';
 import { useTheme } from './hooks/useTheme';
 import Footer from './components/Footer';
 
@@ -46,6 +47,7 @@ export default function App() {
         </Routes>
       </AnimatePresence>
       <Footer />
+      <ChatBot />
     </>
   );
 }
