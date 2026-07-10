@@ -1,38 +1,73 @@
 import { useEffect, useRef, useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { FaTimes, FaPaperPlane } from 'react-icons/fa';
-import { YOUR_NAME } from '../config';
+import { FaTimes, FaPaperPlane, FaDownload, FaCalendarAlt } from 'react-icons/fa';
+import { YOUR_NAME, CHAT_API_URL, CALENDLY_URL, RESUME_PATH } from '../config';
 
 // ─────────────────────────────────────────────────────────────
-//  Mock response engine — replace this function with a real
-//  backend call later (fetch to your API / LLM endpoint).
-//  Keep the signature: async (userText) => string
+//  Offline fallback — keyword responses used when CHAT_API_URL
+//  is unset or the backend is unreachable.
+//  Returns { reply, actions } like the real backend.
 // ─────────────────────────────────────────────────────────────
-async function getBotReply(userText) {
+async function getMockReply(userText) {
   const t = userText.toLowerCase();
 
   // simulate network / thinking latency
   await new Promise((r) => setTimeout(r, 700 + Math.random() * 600));
 
   if (/\b(resume|cv)\b/.test(t)) {
-    return `I can send over ${YOUR_NAME}'s resume. [RESUME.PDF] download coming soon — backend module not yet online.`;
+    return { reply: `Transferring ${YOUR_NAME}'s resume from local storage.`, actions: [{ type: 'resume' }] };
   }
   if (/\b(schedule|call|meeting|interview)\b/.test(t)) {
-    return 'Scheduling module detected in request. Calendar integration is coming soon — for now, drop a message via the Contact page and a human will respond within 24h.';
+    return { reply: 'Opening the calendar uplink — pick a slot that works for you.', actions: [{ type: 'schedule' }] };
   }
   if (/\b(skill|stack|tech|language)\b/.test(t)) {
-    return `${YOUR_NAME} runs on React, Node.js, TypeScript, Python and a healthy dose of caffeine. Full breakdown available in the SKILLS section.`;
+    return { reply: `${YOUR_NAME} runs on React, Node.js, TypeScript, Python and a healthy dose of caffeine. Full breakdown available in the SKILLS section.`, actions: [] };
   }
   if (/\b(project|work|built|portfolio)\b/.test(t)) {
-    return 'Projects archive contains 6 records. Navigate to the PROJECTS section and click any card for a full terminal readout.';
+    return { reply: 'Projects archive contains 6 records. Navigate to the PROJECTS section and click any card for a full terminal readout.', actions: [] };
   }
   if (/\b(contact|email|reach|hire)\b/.test(t)) {
-    return 'You can reach the human via the CONTACT page — email, GitHub, LinkedIn and more are wired up there.';
+    return { reply: 'You can reach the human via the CONTACT page — email, GitHub, LinkedIn and more are wired up there.', actions: [] };
   }
   if (/\b(hi|hello|hey|yo)\b/.test(t)) {
-    return `Greetings, visitor. I'm UNIT-7, ${YOUR_NAME}'s pet assistant bot. Ask me about skills, projects, resume, or scheduling a call.`;
+    return { reply: `Greetings, visitor. I'm UNIT-7, ${YOUR_NAME}'s pet assistant bot. Ask me about skills, projects, resume, or scheduling a call.`, actions: [] };
   }
-  return 'Processing... query not recognized by my current firmware. Try asking about skills, projects, resume, or contact. Full AI core coming soon.';
+  return { reply: 'Processing... query not recognized by my offline firmware. Try asking about skills, projects, resume, or contact.', actions: [] };
+}
+
+// ─────────────────────────────────────────────────────────────
+//  Real brain — POSTs the conversation to the Vercel backend
+//  (api/chat.js → Claude). Falls back to the mock on any failure.
+//  history: [{from:'user'|'bot', text}], newest last (incl. the
+//  message being answered).
+// ─────────────────────────────────────────────────────────────
+async function getBotReply(history) {
+  const lastUserText = history[history.length - 1].text;
+
+  if (!CHAT_API_URL) return getMockReply(lastUserText);
+
+  try {
+    const payload = history.slice(-8).map((m) => ({
+      role: m.from === 'user' ? 'user' : 'assistant',
+      text: m.text.slice(0, 500),
+    }));
+    const res = await fetch(CHAT_API_URL, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ messages: payload }),
+    });
+    if (!res.ok) {
+      // 429 etc. still return an in-character body — use it if present
+      const data = await res.json().catch(() => null);
+      if (data?.reply) return { reply: data.reply, actions: data.actions || [] };
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    return { reply: data.reply, actions: data.actions || [] };
+  } catch {
+    // Backend unreachable — degrade gracefully to the offline firmware
+    return getMockReply(lastUserText);
+  }
 }
 
 const QUICK_ACTIONS = [
@@ -164,11 +199,13 @@ export default function ChatBot() {
     const clean = text.trim();
     if (!clean || typing) return;
     setInput('');
-    setMessages((m) => [...m, { from: 'user', text: clean }]);
+    const userMsg = { from: 'user', text: clean };
+    const history = [...messages, userMsg];
+    setMessages(history);
     setTyping(true);
-    const reply = await getBotReply(clean);
+    const { reply, actions } = await getBotReply(history);
     setTyping(false);
-    setMessages((m) => [...m, { from: 'bot', text: reply }]);
+    setMessages((m) => [...m, { from: 'bot', text: reply, actions }]);
   };
 
   return (
@@ -317,19 +354,51 @@ export default function ChatBot() {
                 <div key={i} style={{
                   alignSelf: m.from === 'user' ? 'flex-end' : 'flex-start',
                   maxWidth: '85%',
-                  padding: '0.55rem 0.75rem',
-                  fontFamily: 'var(--font-mono)', fontSize: '0.74rem', lineHeight: 1.6,
-                  background: m.from === 'user' ? 'rgba(0,245,255,0.08)' : 'var(--surface)',
-                  border: `1px solid ${m.from === 'user' ? 'rgba(0,245,255,0.35)' : 'var(--border)'}`,
-                  color: 'var(--text)',
-                  clipPath: m.from === 'user'
-                    ? 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)'
-                    : 'polygon(0 0, 100% 0, 100% 100%, 8px 100%, 0 calc(100% - 8px))',
+                  display: 'flex', flexDirection: 'column', gap: '0.4rem',
                 }}>
-                  {m.from === 'bot' && (
-                    <span style={{ color: 'var(--cyan)', marginRight: '6px' }}>&gt;</span>
+                  <div style={{
+                    padding: '0.55rem 0.75rem',
+                    fontFamily: 'var(--font-mono)', fontSize: '0.74rem', lineHeight: 1.6,
+                    background: m.from === 'user' ? 'rgba(0,245,255,0.08)' : 'var(--surface)',
+                    border: `1px solid ${m.from === 'user' ? 'rgba(0,245,255,0.35)' : 'var(--border)'}`,
+                    color: 'var(--text)',
+                    clipPath: m.from === 'user'
+                      ? 'polygon(0 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%)'
+                      : 'polygon(0 0, 100% 0, 100% 100%, 8px 100%, 0 calc(100% - 8px))',
+                  }}>
+                    {m.from === 'bot' && (
+                      <span style={{ color: 'var(--cyan)', marginRight: '6px' }}>&gt;</span>
+                    )}
+                    {m.text}
+                  </div>
+
+                  {/* Action buttons attached to bot replies */}
+                  {m.actions?.length > 0 && (
+                    <div style={{ display: 'flex', gap: '0.4rem', flexWrap: 'wrap' }}>
+                      {m.actions.map((a) =>
+                        a.type === 'resume' ? (
+                          <a
+                            key="resume"
+                            href={RESUME_PATH}
+                            download
+                            className="cb-action"
+                          >
+                            <FaDownload size={9} /> RESUME.PDF
+                          </a>
+                        ) : a.type === 'schedule' ? (
+                          <a
+                            key="schedule"
+                            href={CALENDLY_URL}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            className="cb-action"
+                          >
+                            <FaCalendarAlt size={9} /> SCHEDULE CALL
+                          </a>
+                        ) : null
+                      )}
+                    </div>
                   )}
-                  {m.text}
                 </div>
               ))}
               {typing && (
@@ -404,6 +473,18 @@ export default function ChatBot() {
       </AnimatePresence>
 
       <style>{`
+        .cb-action {
+          display: inline-flex; align-items: center; gap: 5px;
+          font-family: var(--font-mono); font-size: 0.6rem;
+          letter-spacing: 0.12em; text-decoration: none;
+          color: var(--cyan); border: 1px solid var(--cyan);
+          padding: 4px 10px; transition: all 0.2s;
+          clip-path: polygon(6px 0%, 100% 0%, calc(100% - 6px) 100%, 0% 100%);
+        }
+        .cb-action:hover {
+          background: var(--cyan); color: var(--bg);
+          box-shadow: 0 0 12px var(--cyan);
+        }
         .cb-float { box-shadow: 0 0 16px rgba(0,245,255,0.25); }
         .cb-breathe { animation: cb-breathe 3.6s ease-in-out infinite; }
         @keyframes cb-breathe {
