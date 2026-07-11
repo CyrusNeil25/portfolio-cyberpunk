@@ -17,5 +17,10 @@ export default defineConfig({
   server: {
     port: parseInt(process.env.PORT) || 2512,
     strictPort: true,
+    // Proxy /api to `vercel dev` (run separately, e.g. `vercel dev --listen 3001`)
+    // so the chatbot's relative CHAT_API_URL works in local dev too.
+    proxy: {
+      '/api': 'http://localhost:3001',
+    },
   },
 })

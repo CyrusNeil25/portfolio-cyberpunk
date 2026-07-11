@@ -15,10 +15,11 @@ export const YOUR_NAME = 'Cyrus Neil';
 export const YOUR_EMAIL = 'TenkaixCyrus007@email.com';
 
 // ── UNIT-7 chatbot backend ──
-// Vercel deployment URL + /api/chat. Leave '' to run in offline mode
-// (the bot falls back to its built-in keyword responses).
-// Example: 'https://my-portfolio-bot.vercel.app/api/chat'
-export const CHAT_API_URL = 'http://localhost:2512/portfolio-cyberpunk/api/chat';
+// Relative path works both under `vercel dev` (local) and once deployed on
+// Vercel, since the frontend and /api/chat share the same origin there.
+// Leave '' to run in offline mode (the bot falls back to its built-in
+// keyword responses).
+export const CHAT_API_URL = '/api/chat';
 
 // Calendly / Cal.com booking page — shown when the bot offers to schedule a call.
 export const CALENDLY_URL = 'https://calendly.com/your-handle/intro-call';

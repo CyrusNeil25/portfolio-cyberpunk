@@ -6,12 +6,15 @@ import { projects } from '../data/projects';
 import ProjectModal from '../components/ProjectModal';
 
 const EXTRA_DETAIL = {
-  1: { role: 'Solo Developer', duration: '3 months', highlight: '1M+ users monitored', lines: '~12,000 LOC' },
-  2: { role: 'Lead Dev', duration: '2 months', highlight: 'Zero-knowledge encryption', lines: '~8,500 LOC' },
-  3: { role: 'Backend Architect', duration: '6 weeks', highlight: '99.9% uptime SLA', lines: '~5,200 LOC' },
-  4: { role: 'Full Stack', duration: '1 month', highlight: 'P2P WebRTC mesh', lines: '~6,800 LOC' },
-  5: { role: 'Solo Developer', duration: '3 weeks', highlight: 'Infinite procedural maps', lines: '~3,400 LOC' },
-  6: { role: 'Tool Author', duration: '2 weeks', highlight: 'Processes 100k rows/sec', lines: '~2,100 LOC' },
+  1: { role: 'Solo Developer', duration: 'Ongoing', highlight: 'Multi-tenant SaaS platform', lines: '~10,000 LOC' },
+  2: { role: 'Solo Developer', duration: '1 month', highlight: 'Paid consults + booking', lines: '~7,000 LOC' },
+  3: { role: 'Solo Developer', duration: 'Ongoing', highlight: 'AI-verified job listings', lines: '~6,000 LOC' },
+  4: { role: 'Full Stack', duration: '3 months', highlight: '1M+ users monitored', lines: '~12,000 LOC' },
+  5: { role: 'Lead Dev', duration: '2 months', highlight: 'Zero-knowledge encryption', lines: '~8,500 LOC' },
+  6: { role: 'Backend Architect', duration: '6 weeks', highlight: '99.9% uptime SLA', lines: '~5,200 LOC' },
+  7: { role: 'Full Stack', duration: '1 month', highlight: 'P2P WebRTC mesh', lines: '~6,800 LOC' },
+  8: { role: 'Solo Developer', duration: '3 weeks', highlight: 'Infinite procedural maps', lines: '~3,400 LOC' },
+  9: { role: 'Tool Author', duration: '2 weeks', highlight: 'Processes 100k rows/sec', lines: '~2,100 LOC' },
 };
 
 function ProjectCard({ project, index, featured, onOpen }) {

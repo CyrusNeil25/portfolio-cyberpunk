@@ -16,7 +16,8 @@ const ALLOWED_ORIGINS = [
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:2512',
-  'http://localhost:2512/portfolio-cyberpunk/',
+  'http://localhost:3000',
+  'http://localhost:3001',
   'http://portfolio-cyrus.vercel.app/',
 ];
 
