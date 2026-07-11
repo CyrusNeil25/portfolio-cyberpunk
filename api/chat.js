@@ -10,15 +10,18 @@
 import Anthropic from '@anthropic-ai/sdk';
 import { SYSTEM_PROMPT } from './_lib/persona.js';
 
-// Origins allowed to call this API. Add your GitHub Pages origin here.
+// Origins allowed to call this API. Frontend now lives on Vercel too (same
+// origin as this function), but browsers still send an Origin header on
+// same-origin POST requests, so the production domain(s) must be listed here.
 const ALLOWED_ORIGINS = [
+  'https://portfolio-cyrus.vercel.app',
+  'https://portfolio-cyrus-tenkai-dojo.vercel.app',
   'https://cyrusneil25.github.io',
   'http://localhost:5173',
   'http://127.0.0.1:5173',
   'http://localhost:2512',
   'http://localhost:3000',
   'http://localhost:3001',
-  'http://portfolio-cyrus.vercel.app/',
 ];
 
 // Request caps
